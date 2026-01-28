@@ -1,34 +1,40 @@
 import { useState } from "react";
+import Note from "./components/Note"
+const App = (props)=>{
+  const [notes, setNotes] = useState(props.notes)
+  const [newNote, setNewNote] = useState(' a new note.. ')
+  const [showAll, setShowALl] = useState(true)  
 
-const App = ()=>{
-  const [left, setLeft] = useState(0);
-  const [right, setRight] = useState(0);
-  const [allClicks, setAll] = useState([])
-  const [total, setTotal] = useState(0)
 
-
-  const handLeftClick = ()=>{
-    setAll(allClicks.concat('L'))
-     console.log('left before', left)
-    setLeft(left+1)
-     console.log('left after', left)
-      setTotal(left + right)
+  const addNote = (event)=>{
+    event.preventDefault()
+    const noteObj = {
+      content: newNote,
+      id:notes.length+1,
+      important: Math.random() < 0.5
+    }
+    setNotes(notes.concat(noteObj))
+    setNewNote('')
   }
-
-  const handRightClick= ()=>{
-    setAll(allClicks.concat('R'))
-    setRight(right+1)
-      setTotal(left + right)
+  const handleNoteChange = (event)=>{
+    setNewNote(event.target.value)
   }
-  return(
+  const notesToShow = showAll ? notes : notes.filter(note=> note.important === true)
+  return (
     <>
-    {left}
-    <button onClick={handLeftClick}>left</button>
-    <button onClick={handRightClick}>right</button>
-    {right}
-    <p>{allClicks.join(' ')}</p>
-    <p>total : {total}</p>
+    <h1>Notes</h1>
+      <ul>
+      {notesToShow.map( note=>{
+       return  <Note key={note.id} note={note}/>
+      })}
+      </ul>
+      <button onClick={()=> setShowALl(!showAll)}>{showAll? "important" : "all" }</button>
+      <form onSubmit={addNote}>
+        <input value={newNote}  onChange={handleNoteChange}/>
+        <button type="submit">save</button>
+      </form>
     </>
   )
 }
+
 export default App
