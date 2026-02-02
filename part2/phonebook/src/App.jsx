@@ -1,19 +1,34 @@
-import { useState } from 'react'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
 import Filter from "./components/Filter"
 import PersonForm from './components/PersonForm'
-import Persons from './components/Persons'
+import Person from './components/Person'
+import phonebook from './services/phonebook'
+import Notification from './components/Notification'
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ])
+  const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResult, setSearchResult] = useState([])  
+  const [statusMsg, setStatusMsg] = useState('')
 
+  const hook = ()=>{
+    console.log('executing hook');
+    
+    // axios.get('http://localhost:3001/persons')
+    // .then(response =>{
+    //   console.log(response.data);
+    //   setPersons(response.data)
+    // })
+    phonebook.getAll()
+    .then(data=>{
+      console.log(data);
+      setPersons(data)
+    })
+    
+  }
+  useEffect(hook, [statusMsg])
   const handleChange = (event)=>{
     setNewName(event.target.value)
   }
@@ -39,23 +54,74 @@ const App = () => {
     if(persons.some( (person)=>{
       return person.name.toLowerCase() === newName.toLowerCase()
     })){
-      alert(`${newName} is already in the phonebook`)
-      setNewName('')
-      return 
+      if(window.confirm(`${newName} already exists in the book , do  you wnat to update the number`)){
+        const p =  persons.find(person=>{
+          return person.name.toLowerCase() === newName.toLowerCase()
+        })
+      const newObj = { ...p, number: newNumber}
+      phonebook.update(p.id, newObj).then(data=>{
+         setPersons(persons.map(person => {
+        return p.id === person.id ? data : person
+      }) )
+        setStatusMsg(`Number of ${newObj.name} updated`)
+      setTimeout(()=>{
+        setStatusMsg(``)
+      },2000)
+      })
+      .catch(err =>{
+        setStatusMsg('Contact not foudn in server')
+        setTimeout(()=> setStatusMsg(''),2000)
+      })
+     return //exit from this function after updation
+
+      }else{
+        return 
+      }
+
     }
     const newObj = {
       name: `${newName}`,
-      id: persons.length+1,
       number:newNumber
     }
+    axios.post('http://localhost:3001/persons',newObj)
+    .then(response =>{
+      setStatusMsg(`${response.data.name} added`)
+      setPersons(persons.concat(response.data))
     setNewNumber('')
     setNewName('')
-    setPersons(persons.concat(newObj)) 
+      setTimeout(()=>{
+        setStatusMsg(``)
+      },2000)
+    }).catch(err =>{
+      console.log(err);
+      
+    })
+    // setPersons(persons.concat(newObj)) 
   }
 
+  const DeleteContact = id =>{
+      const p = persons.find(p => p.id===id)
+      if(window.confirm(`Delete ${p.name}`)){
+
+      console.log(`person with ${id} wants to be deleted`);
+      phonebook.deleteData(id).then(data =>{
+        setPersons( persons.filter(person => person.id !== id))
+      setStatusMsg(` ${p.name} deleted`)
+      setTimeout(()=>{
+        setStatusMsg(``)
+      },2000)
+      })
+      .catch(err =>{
+        setStatusMsg('Contact alrady delted from server')
+        setTimeout(()=>setStatusMsg(''), 2000)
+      })
+    }
+    
+  }
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={statusMsg}/>
       <Filter searchResult={searchResult} handleSearchTerm={handleSearchTerm} searchTerm={searchTerm}  />
       <h2>Add A new Contact</h2>
 
@@ -63,7 +129,10 @@ const App = () => {
 
       <h2>Numbers</h2>
 
-      <Persons persons={persons}/>
+      {/* <Persons persons={persons} handleDelete={()=>DeleteContact()}/> */}
+      {persons.map(person =>{
+        return <Person key={person.id} person={person} handleDelete={()=>DeleteContact(person.id)} />
+      })}
     <div>
     </div>
     </div>
