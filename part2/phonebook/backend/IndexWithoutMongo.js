@@ -4,10 +4,6 @@ const morgan = require('morgan')
 const cors = require('cors')
 app.use(cors())
 app.use(express.json())
-const Person = require('./mongo')
-Person.find({}).then(result=>{
-	console.log(result);
-})
 const requestLogger = (req, res, next) => {
 	console.log('Method: ', req.method);
 	console.log('Path: ', req.path);
