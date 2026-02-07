@@ -1,20 +1,20 @@
 
 const mongoose = require('mongoose')
-const config = require('./utils/config')
 
-const URI= config.MONGODB_URI
-
-mongoose.set('strictQuery', false)
-
-mongoose.connect(URI, { family: 4 }).then(() => {
-	console.log('Coneected to db')
-})
 // console.log(`legnth is ${process.argv.length}, the cmd line args are ${process.argv[1]}` );
 
 
 const phonebookSchema = new mongoose.Schema({
 	name: String,
-	number: String
+	number: {
+		type: String,
+		required: true,
+		minlength: 10
+	},
+	user: {
+		type: mongoose.Schema.Types.ObjectId,
+		ref:'User'
+	}
 })
 const Person = mongoose.model('Person', phonebookSchema, 'persons')
 phonebookSchema.set('toJSON', {
